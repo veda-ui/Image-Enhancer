@@ -1,0 +1,9 @@
+torch
+numpy
+basicsr
+realesrgan
+Pillow
+pytesseract
+opencv-python
+
+
