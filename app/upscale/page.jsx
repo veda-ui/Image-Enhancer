@@ -1,6 +1,5 @@
 "use client";
 
-
 import BubbleText from "../components/Bubbletext";
 import { useState } from "react";
 import { upload } from "../../actions/Usercontrolls";
@@ -11,26 +10,28 @@ export default function UpscalePage() {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  return (
-    <div className=" absolute left-2/6 top-1/6 text-4xl">
-      <div className="mb-20">
-      <div className="group inline-flex space-x-2">
-  <span className="hoverText transition-[font-weight,color] duration-350 group-hover:font-black group-hover:text-indigo-100">
-    Choose the
-  </span>
-  <span className="hoverText transition-[font-weight,color] duration-350 group-hover:[&:hover]:font-medium group-hover:[&:hover]:text-indigo-200">
-    File
-  </span>
-  <span className="hoverText transition-[font-weight] duration-350 group-hover:[&:hover]:font-light">
-    To upload!!
-  </span>
-</div>
+  const handleDownload = () => {
+    const link = document.createElement("a");
+    link.href = upscaledImage;
+    link.download = "upscaled-image.png";
+    link.click();
+  };
 
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen bg-black text-white p-6">
+      <div className="text-center mb-10">
+        <h1 className="text-5xl font-bold text-white mb-4">Image Upscaler</h1>
+        <p className="text-lg text-gray-400">
+          Upload an image to enhance its quality and download the upscaled version.
+        </p>
       </div>
-      <form 
+
+      <form
+        className="bg-gray-900 shadow-md rounded-lg p-6 w-full max-w-md"
         action={async (formData) => {
           setError(null);
           setLoading(true);
+
           const response = await upload({}, formData);
           setLoading(false);
 
@@ -42,30 +43,58 @@ export default function UpscalePage() {
           }
         }}
       >
-        <div className="mb-3">
-        <input className=" file-input file-input-neutral"  type="file" name="file" required accept="image/*" />
+        <div className="mb-4">
+          <input
+            className="file-input file-input-bordered w-full bg-gray-800 text-white placeholder-gray-500"
+            type="file"
+            name="file"
+            required
+            accept="image/*"
+          />
         </div>
-        <div className="mb-3 btn btn-neutral">
-        <button className="" type="submit" disabled={loading}>
-          {loading ? "Processing..." : "Upload"}
+        <button
+          className={`btn w-full ${loading ? "btn-disabled bg-gray-700" : "btn-primary bg-white text-black"}`}
+          type="submit"
+          disabled={loading}
+        >
+          {loading ? "Completed" : "Upload"}
         </button>
-        </div>
       </form>
 
-      {error && <p className="alert alert-error">{error}</p>}
+      {error && (
+        <p className="alert alert-error mt-4 w-full max-w-md text-center text-red-500">{error}</p>
+      )}
 
-      <div style={{ display: "flex", justifyContent: "center", gap: "20px", marginTop: "20px" }}>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-10 w-full max-w-4xl">
         {uploadedImage && (
-          <div>
-            <h3>Original Image</h3>
-            <img src={uploadedImage} alt="Uploaded" style={{ maxWidth: "400px", borderRadius: "8px" }} />
+          <div className="bg-gray-900 shadow-md rounded-lg p-4">
+            <h3 className="text-xl font-semibold text-gray-400 mb-4 text-center">
+              Original Image
+            </h3>
+            <img
+              src={uploadedImage}
+              alt="Uploaded"
+              className="w-full rounded-lg border border-gray-700"
+            />
           </div>
         )}
 
         {upscaledImage && (
-          <div>
-            <h3>Upscaled Image</h3>
-            <img src={upscaledImage} alt="Upscaled" style={{ maxWidth: "400px", borderRadius: "8px" }} />
+          <div className="bg-gray-900 shadow-md rounded-lg p-4">
+            <h3 className="text-xl font-semibold text-gray-400 mb-4 text-center">
+              Upscaled Image
+            </h3>
+            <img
+              src={upscaledImage}
+              alt="Upscaled"
+              className="w-full rounded-lg border border-gray-700"
+            />
+            <button
+              onClick={handleDownload}
+              className="btn bg-white text-black w-full mt-4"
+            >
+              Download Upscaled Image
+            </button>
           </div>
         )}
       </div>

@@ -19,7 +19,7 @@ export default function Register() {
     <>
       <form action={formstatus} className="max-w-xs mx-auto">
         <div className="mb-3">
-          <input autoComplete="off" name="username" type="text" placeholder="Username" className="input" />
+          <input autoComplete="off" name="username" type="text" placeholder="Username" className="input placeholder-black text-black" />
         </div>
         {formss.errors?.username && (
           <div role="alert" className="alert alert-error">
@@ -28,7 +28,7 @@ export default function Register() {
         )}
 
         <div className="mb-3">
-          <input autoComplete="off" name="password" type="password" placeholder="Password" className="input" />
+          <input autoComplete="off" name="password" type="password" placeholder="Password" className="input  placeholder-black text-black" />
         </div>
         {formss.errors?.password && (
           <div role="alert" className="alert alert-error">

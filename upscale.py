@@ -39,7 +39,7 @@ upsampler = RealESRGANer(
     scale=4,
     model_path=model_path,
     model=model,
-    tile=512,  # Enable tiling for better quality
+    tile=512,  
     tile_pad=32,
     pre_pad=0,
     half=device.type == "cuda",
@@ -52,51 +52,46 @@ image_np = np.array(image)
 
 
 def get_text_regions_mser(image):
-    """Detect text regions using MSER"""
+    
     gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
     mser = cv2.MSER_create()
     regions, _ = mser.detectRegions(gray)
     boxes = []
     for region in regions:
         x, y, w, h = cv2.boundingRect(region)
-        if 8 < w < 300 and 8 < h < 100:  # Filter reasonable text size
+        if 8 < w < 300 and 8 < h < 100: 
             boxes.append((x, y, w, h))
     return boxes
 
 def detect_text_regions(image):
-    """Enhanced text detection using multiple methods"""
-    # Original Tesseract detection
+    
+    
     gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
     
-    # Improve contrast for better detection
     clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
     gray = clahe.apply(gray)
     
-    # Apply adaptive thresholding
     thresh = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
                                  cv2.THRESH_BINARY, 11, 2)
     
-    # Get Tesseract boxes
     config = '--oem 1 --psm 3 -c tessedit_char_blacklist=§±®©°¥€¢$£¤¶◊'
     ocr_data = pytesseract.image_to_data(thresh, output_type=Output.DICT, config=config)
     
     boxes = []
-    # Get Tesseract boxes
+    
     for i in range(len(ocr_data['text'])):
         conf = int(ocr_data['conf'][i])
-        if conf > 20:  # Lower threshold but will be validated
+        if conf > 20:  
             x, y, w, h = (ocr_data['left'][i], ocr_data['top'][i],
                          ocr_data['width'][i], ocr_data['height'][i])
-            if w * h > 30:  # Minimum area threshold
+            if w * h > 30: 
                 boxes.append((x, y, w, h))
     
-    # Get MSER boxes
     mser_boxes = get_text_regions_mser(image)
     
-    # Merge boxes
+   
     all_boxes = boxes + mser_boxes
     
-    # Merge overlapping boxes
     merged_boxes = []
     while all_boxes:
         base = all_boxes.pop(0)
@@ -113,14 +108,14 @@ def detect_text_regions(image):
     return merged_boxes
 
 def boxes_overlap(box1, box2):
-    """Check if two boxes overlap"""
+    
     x1, y1, w1, h1 = box1
     x2, y2, w2, h2 = box2
     return not (x1 + w1 < x2 or x2 + w2 < x1 or 
                y1 + h1 < y2 or y2 + h2 < y1)
 
 def merge_boxes(box1, box2):
-    """Merge two overlapping boxes"""
+    
     x1 = min(box1[0], box2[0])
     y1 = min(box1[1], box2[1])
     x2 = max(box1[0] + box1[2], box2[0] + box2[2])
@@ -128,10 +123,10 @@ def merge_boxes(box1, box2):
     return (x1, y1, x2 - x1, y2 - y1)
 
 def enhance_text_regions(image, boxes, enhancement_factor=1.5):
-    """Enhanced text region processing with improved blending"""
+    
     result = image.copy()
     for x, y, w, h in boxes:
-        # Add larger padding for better blending
+        
         pad = max(4, int(min(w, h) * 0.1))
         y_start = max(0, y - pad)
         y_end = min(image.shape[0], y + h + pad)
@@ -140,24 +135,22 @@ def enhance_text_regions(image, boxes, enhancement_factor=1.5):
         
         region = image[y_start:y_end, x_start:x_end]
         
-        # Enhanced sharpening with edge preservation
+       
         blurred = cv2.GaussianBlur(region, (0, 0), 1.0)
         enhanced_region = cv2.addWeighted(region, 1.5, blurred, -0.5, 0)
         
-        # Contrast enhancement
+       
         lab = cv2.cvtColor(enhanced_region, cv2.COLOR_RGB2LAB)
         l, a, b = cv2.split(lab)
         clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8,8))
         l = clahe.apply(l)
         enhanced_region = cv2.cvtColor(cv2.merge([l, a, b]), cv2.COLOR_LAB2RGB)
         
-        # Create smooth transition mask
         mask = np.ones(region.shape[:2], dtype=np.float32)
         mask = cv2.GaussianBlur(mask, (pad*2+1, pad*2+1), pad/2)
-        mask = np.clip(mask * 0.7, 0, 1)  # Reduce max blend strength
+        mask = np.clip(mask * 0.7, 0, 1) 
         mask = mask[:,:,np.newaxis]
         
-        # Blend with original
         result[y_start:y_end, x_start:x_end] = \
             enhanced_region * mask + region * (1 - mask)
     
@@ -167,7 +160,6 @@ def enhance_text_regions(image, boxes, enhancement_factor=1.5):
 print("Upscaling image...")
 output_np, _ = upsampler.enhance(image_np, outscale=4)
 
-# Detect and enhance text regions
 print("Detecting and enhancing text regions...")
 text_boxes = detect_text_regions(output_np)
 if text_boxes:
